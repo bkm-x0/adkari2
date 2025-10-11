@@ -46,15 +46,19 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
           ? await _apiService.getArabicCategories()
           : await _apiService.getEnglishCategories();
       
-      setState(() {
-        _categories = categories;
-        _isLoading = false;
-      });
-      _headerController.forward();
+      if (mounted) {
+        setState(() {
+          _categories = categories;
+          _isLoading = false;
+        });
+        _headerController.forward();
+      }
     } catch (e) {
       print('Error loading data: $e');
-      setState(() => _isLoading = false);
-      _showError('فشل تحميل البيانات. تحقق من اتصال الإنترنت.');
+      if (mounted) {
+        setState(() => _isLoading = false);
+        _showError('فشل تحميل البيانات. تحقق من اتصال الإنترنت.');
+      }
     }
   }
 
@@ -82,7 +86,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
         decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
-            end: Alignment.center,
+            end: Alignment.bottomCenter,
             colors: [
               AppColors.primary,
               AppColors.background,
@@ -114,7 +118,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                           ],
                         ),
                       )
-                    : _buildCategoriesList(),
+                    : _buildContent(),
               ),
             ],
           ),
@@ -216,7 +220,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildCategoriesList() {
+  Widget _buildContent() {
     if (_categories.isEmpty) {
       return Center(
         child: Column(
@@ -261,87 +265,147 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
         padding: const EdgeInsets.all(16),
         itemCount: _categories.length,
         itemBuilder: (context, index) {
-          return TweenAnimationBuilder<double>(
-            duration: Duration(milliseconds: 300 + (index * 30)),
-            tween: Tween(begin: 0.0, end: 1.0),
-            curve: Curves.easeOutBack,
-            builder: (context, value, child) {
-              return Transform.scale(
-                scale: value,
-                child: Opacity(
-                  opacity: value,
+          return _AnimatedCategoryCard(
+            category: _categories[index],
+            index: index,
+            onTap: () => _navigateToCategoryDetail(_categories[index]),
+          );
+        },
+      ),
+    );
+  }
+
+  Future<void> _navigateToCategoryDetail(AthkarCategory category) async {
+    // Show loading
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => Center(
+        child: Card(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircularProgressIndicator(color: AppColors.primary),
+                const SizedBox(height: 16),
+                Text(
+                  'جاري تحميل الأذكار...',
+                  style: TextStyle(
+                    fontFamily: 'Amiri',
+                    fontSize: 16,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+
+    try {
+      // Load category items
+      final categoryWithItems = await _apiService.loadCategoryWithItems(category);
+
+      // Close loading
+      if (mounted) Navigator.pop(context);
+
+      // Navigate to detail page
+      if (mounted) {
+        Navigator.push(
+          context,
+          PageRouteBuilder(
+            pageBuilder: (context, animation, secondaryAnimation) =>
+                AthkarDetailPage(category: categoryWithItems),
+            transitionsBuilder: (context, animation, secondaryAnimation, child) {
+              return FadeTransition(
+                opacity: animation,
+                child: SlideTransition(
+                  position: Tween<Offset>(
+                    begin: const Offset(1, 0),
+                    end: Offset.zero,
+                  ).animate(animation),
                   child: child,
                 ),
               );
             },
-            child: _CategoryCard(
-              category: _categories[index],
-              index: index,
-              onTap: () async {
-                // Show loading
-                showDialog(
-                  context: context,
-                  barrierDismissible: false,
-                  builder: (context) => Center(
-                    child: Card(
-                      child: Padding(
-                        padding: const EdgeInsets.all(24),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            CircularProgressIndicator(color: AppColors.primary),
-                            const SizedBox(height: 16),
-                            Text(
-                              'جاري تحميل الأذكار...',
-                              style: TextStyle(
-                                fontFamily: 'Amiri',
-                                fontSize: 16,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                );
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        Navigator.pop(context);
+        _showError('فشل تحميل الأذكار');
+      }
+    }
+  }
+}
 
-                try {
-                  // Load category items
-                  final categoryWithItems = await _apiService.loadCategoryWithItems(
-                    _categories[index],
-                  );
+class _AnimatedCategoryCard extends StatefulWidget {
+  final AthkarCategory category;
+  final int index;
+  final VoidCallback onTap;
 
-                  // Close loading
-                  Navigator.pop(context);
+  const _AnimatedCategoryCard({
+    required this.category,
+    required this.index,
+    required this.onTap,
+  });
 
-                  // Navigate to detail page
-                  Navigator.push(
-                    context,
-                    PageRouteBuilder(
-                      pageBuilder: (context, animation, secondaryAnimation) =>
-                          AthkarDetailPage(category: categoryWithItems),
-                      transitionsBuilder: (context, animation, secondaryAnimation, child) {
-                        return FadeTransition(
-                          opacity: animation,
-                          child: SlideTransition(
-                            position: Tween<Offset>(
-                              begin: const Offset(1, 0),
-                              end: Offset.zero,
-                            ).animate(animation),
-                            child: child,
-                          ),
-                        );
-                      },
-                    ),
-                  );
-                } catch (e) {
-                  Navigator.pop(context);
-                  _showError('فشل تحميل الأذكار');
-                }
-              },
-            ),
-          );
-        },
+  @override
+  State<_AnimatedCategoryCard> createState() => _AnimatedCategoryCardState();
+}
+
+class _AnimatedCategoryCardState extends State<_AnimatedCategoryCard> 
+    with SingleTickerProviderStateMixin {
+  late AnimationController _animationController;
+  late Animation<double> _scaleAnimation;
+  late Animation<double> _opacityAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _animationController = AnimationController(
+      duration: Duration(milliseconds: 400 + (widget.index * 50)),
+      vsync: this,
+    );
+
+    _scaleAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(
+      parent: _animationController,
+      curve: Curves.easeOutBack,
+    ));
+
+    _opacityAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(
+      parent: _animationController,
+      curve: Curves.easeOut,
+    ));
+
+    _animationController.forward();
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ScaleTransition(
+      scale: _scaleAnimation,
+      child: FadeTransition(
+        opacity: _opacityAnimation,
+        child: _CategoryCard(
+          category: widget.category,
+          index: widget.index,
+          onTap: widget.onTap,
+        ),
       ),
     );
   }
@@ -392,12 +456,7 @@ class _CategoryCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(20),
-        gradient: LinearGradient(
-          colors: [
-            Colors.white,
-            Colors.white.withOpacity(0.9),
-          ],
-        ),
+        color: Colors.white,
         boxShadow: [
           BoxShadow(
             color: AppColors.shadowLight,

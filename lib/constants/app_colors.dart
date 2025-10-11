@@ -77,7 +77,9 @@ class AppColors {
   // Main colors used in the app
   
   // Gradients
- 
+
+
+
 
   
   static const List<Color> gradientColors = [primaryDark, primaryBlue, primaryTeal];

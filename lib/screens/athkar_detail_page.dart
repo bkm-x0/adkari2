@@ -197,7 +197,7 @@ class _AthkarDetailPageState extends State<AthkarDetailPage> {
       itemBuilder: (context, index) {
         return TweenAnimationBuilder<double>(
           duration: Duration(milliseconds: 300 + (index * 50)),
-          tween: Tween(begin: 0.0, end: 1.0),
+          tween: Tween(begin: 0.0, end: 1),
           curve: Curves.easeOut,
           builder: (context, value, child) {
             return Transform.translate(
