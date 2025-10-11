@@ -1,0 +1,46 @@
+name: athkar_muslim_app
+description: Application complète pour les Athkar musulmans avec Quran
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ">=2.17.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  http: ^1.1.0
+  cupertino_icons: ^1.0.2
+  shared_preferences: ^2.2.2
+  provider: ^6.1.5+1
+  flutter_localizations:
+    sdk: flutter
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^2.0.0
+
+flutter:
+  uses-material-design: true
+  
+  assets:
+    - assets/data/adhkar.json
+    - assets/data/quran.json
+  
+  fonts:
+    - family: Uthmanic
+      fonts:
+        - asset: assets/fonts/uthmanic_hafs.otf
+        - asset: assets/fonts/uthmanic_hafs_bold.otf
+          weight: 700
+    
+    - family: Amiri
+      fonts:
+        - asset: assets/fonts/Amiri-Regular.ttf
+        - asset: assets/fonts/Amiri-Bold.ttf
+          weight: 700
+    
+    - family: Lateef
+      fonts:
+        - asset: assets/fonts/Lateef-Regular.ttf
