@@ -17,8 +17,33 @@ class AthkarItemWidget extends StatefulWidget {
   State<AthkarItemWidget> createState() => _AthkarItemWidgetState();
 }
 
-class _AthkarItemWidgetState extends State<AthkarItemWidget> {
+class _AthkarItemWidgetState extends State<AthkarItemWidget>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _tapCtrl;
+  late Animation<double> _tapScale;
+
+  @override
+  void initState() {
+    super.initState();
+    _tapCtrl = AnimationController(
+      duration: const Duration(milliseconds: 100),
+      vsync: this,
+      lowerBound: 0.0,
+      upperBound: 1.0,
+    );
+    _tapScale = Tween<double>(begin: 1.0, end: 0.97).animate(
+      CurvedAnimation(parent: _tapCtrl, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _tapCtrl.dispose();
+    super.dispose();
+  }
+
   void _decrementCounter() {
+    _tapCtrl.forward().then((_) => _tapCtrl.reverse());
     setState(() {
       widget.item.decrementCount();
       if (widget.item.isCompleted && widget.onCompleted != null) {
@@ -33,128 +58,136 @@ class _AthkarItemWidgetState extends State<AthkarItemWidget> {
     });
   }
 
-  // Check if text contains Quranic verses (brackets or specific markers)
   bool _isQuranText(String text) {
-    return text.contains('﴿') || 
-           text.contains('﴾') || 
-           text.contains('بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ');
+    return text.contains('﴿') ||
+        text.contains('﴾') ||
+        text.contains('بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ');
   }
 
   @override
   Widget build(BuildContext context) {
     final isCompleted = widget.item.isCompleted;
     final isQuran = _isQuranText(widget.item.text);
+    final remaining = widget.item.currentCount;
+    final total = widget.item.count;
+    final fraction = total > 0 ? (total - remaining) / total : 0.0;
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      decoration: AppStyles.cardDecoration.copyWith(
-        border: Border.all(
-          color: isCompleted ? AppColors.success : Colors.transparent,
-          width: 2,
-        ),
+    return AnimatedBuilder(
+      animation: _tapScale,
+      builder: (context, child) => Transform.scale(
+        scale: _tapScale.value,
+        child: child,
       ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: isCompleted ? null : _decrementCounter,
-          borderRadius: BorderRadius.circular(16),
-          child: Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // Athkar Text - Use Uthmanic font for Quran, Amiri for others
-                Text(
-                  widget.item.text,
-                  style: (isQuran ? AppStyles.quranText : AppStyles.bodyLarge).copyWith(
-                    color: isCompleted 
-                        ? AppColors.textSecondary 
-                        : AppColors.textPrimary,
-                    decoration: isCompleted 
-                        ? TextDecoration.lineThrough 
-                        : null,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 14),
+        decoration: BoxDecoration(
+          color: AppColors.cardBackground,
+          borderRadius: BorderRadius.circular(20),
+          border: isCompleted
+              ? Border.all(color: AppColors.success.withOpacity(0.35), width: 1.5)
+              : null,
+          boxShadow: [
+            BoxShadow(
+              color: isCompleted
+                  ? AppColors.success.withOpacity(0.08)
+                  : AppColors.shadowLight,
+              blurRadius: 14,
+              offset: const Offset(0, 5),
+            ),
+          ],
+        ),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: isCompleted ? null : _decrementCounter,
+            borderRadius: BorderRadius.circular(20),
+            splashColor: AppColors.primary.withOpacity(0.06),
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // Text
+                  Text(
+                    widget.item.text,
+                    style: (isQuran ? AppStyles.quranText : AppStyles.bodyLarge).copyWith(
+                      color: isCompleted
+                          ? AppColors.textLight
+                          : AppColors.textPrimary,
+                    ),
+                    textAlign: TextAlign.right,
+                    textDirection: TextDirection.rtl,
                   ),
-                  textAlign: TextAlign.right,
-                  textDirection: TextDirection.rtl,
-                ),
-                
-                const SizedBox(height: 20),
-                
-                // Counter and Actions
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    // Reset Button
-                    if (widget.item.currentCount != widget.item.count)
-                      TextButton.icon(
-                        onPressed: _resetCounter,
-                        icon: const Icon(Icons.refresh, size: 18),
-                        label: const Text(
-                          'إعادة',
-                          style: TextStyle(fontFamily: 'Amiri'),
+                  const SizedBox(height: 18),
+                  // Mini progress
+                  if (total > 1) ...[
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(4),
+                      child: LinearProgressIndicator(
+                        value: fraction,
+                        minHeight: 3,
+                        backgroundColor: AppColors.surface,
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          isCompleted ? AppColors.success : AppColors.primary,
                         ),
-                        style: TextButton.styleFrom(
-                          foregroundColor: AppColors.textSecondary,
-                        ),
-                      )
-                    else
-                      const SizedBox.shrink(),
-                    
-                    // Counter Display
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 24,
-                        vertical: 12,
-                      ),
-                      decoration: BoxDecoration(
-                        color: isCompleted 
-                            ? AppColors.success 
-                            : AppColors.primary,
-                        borderRadius: BorderRadius.circular(30),
-                        boxShadow: [
-                          BoxShadow(
-                            color: (isCompleted 
-                                    ? AppColors.success 
-                                    : AppColors.primary)
-                                .withOpacity(0.3),
-                            blurRadius: 8,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          if (isCompleted)
-                            const Icon(
-                              Icons.check_circle,
-                              color: Colors.white,
-                              size: 20,
-                            )
-                          else
-                            const Icon(
-                              Icons.touch_app,
-                              color: Colors.white,
-                              size: 20,
-                            ),
-                          const SizedBox(width: 8),
-                          Text(
-                            isCompleted 
-                                ? 'مكتمل' 
-                                : '${widget.item.currentCount}',
-                            style: const TextStyle(
-                              fontFamily: 'Amiri',
-                              color: Colors.white,
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
                       ),
                     ),
+                    const SizedBox(height: 14),
                   ],
-                ),
-              ],
+                  // Counter row
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      if (remaining != total)
+                        TextButton.icon(
+                          onPressed: _resetCounter,
+                          icon: const Icon(Icons.refresh_rounded, size: 16),
+                          label: const Text(
+                            'إعادة',
+                            style: TextStyle(fontFamily: 'Amiri', fontSize: 13),
+                          ),
+                          style: TextButton.styleFrom(
+                            foregroundColor: AppColors.textSecondary,
+                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                            minimumSize: Size.zero,
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          ),
+                        )
+                      else
+                        const SizedBox.shrink(),
+                      // Counter pill
+                      AnimatedContainer(
+                        duration: const Duration(milliseconds: 250),
+                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                        decoration: BoxDecoration(
+                          color: isCompleted ? AppColors.success : AppColors.primary,
+                          borderRadius: BorderRadius.circular(24),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              isCompleted ? Icons.check_rounded : Icons.touch_app_rounded,
+                              color: Colors.white,
+                              size: 18,
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              isCompleted ? 'مكتمل' : '$remaining',
+                              style: const TextStyle(
+                                fontFamily: 'Amiri',
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ),
         ),

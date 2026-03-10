@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../constants/app_colors.dart';
 import 'home_page.dart';
 import 'quran_list_page.dart';
+import 'hadith_search_page.dart';
 
 class MainNavigation extends StatefulWidget {
   const MainNavigation({Key? key}) : super(key: key);
@@ -18,6 +19,7 @@ class _MainNavigationState extends State<MainNavigation> with SingleTickerProvid
   final List<Widget> _pages = [
     const HomePage(),
     const QuranListPage(),
+    const HadithSearchPage(),
   ];
 
   @override
@@ -56,44 +58,92 @@ class _MainNavigationState extends State<MainNavigation> with SingleTickerProvid
         opacity: _fadeAnimation,
         child: _pages[_selectedIndex],
       ),
+      extendBody: true,
       bottomNavigationBar: Container(
+        margin: const EdgeInsets.fromLTRB(24, 0, 24, 20),
         decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(28),
           boxShadow: [
             BoxShadow(
               color: AppColors.shadowMedium,
-              blurRadius: 20,
-              offset: const Offset(0, -5),
+              blurRadius: 24,
+              offset: const Offset(0, 8),
             ),
           ],
         ),
-        child: ClipRRect(
-          borderRadius: const BorderRadius.only(
-            topLeft: Radius.circular(30),
-            topRight: Radius.circular(30),
-          ),
-          child: BottomNavigationBar(
-            currentIndex: _selectedIndex,
-            onTap: _onItemTapped,
-            backgroundColor: Colors.white,
-            selectedItemColor: AppColors.primary,
-            unselectedItemColor: AppColors.textSecondary,
-            selectedFontSize: 14,
-            unselectedFontSize: 12,
-            type: BottomNavigationBarType.fixed,
-            elevation: 0,
-            items: const [
-              BottomNavigationBarItem(
-                icon: Icon(Icons.book_outlined, size: 28),
-                activeIcon: Icon(Icons.book, size: 28),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              _buildNavItem(
+                index: 0,
+                icon: Icons.auto_stories_outlined,
+                activeIcon: Icons.auto_stories,
                 label: 'الأذكار',
               ),
-              BottomNavigationBarItem(
-                icon: Icon(Icons.menu_book_outlined, size: 28),
-                activeIcon: Icon(Icons.menu_book, size: 28),
+              _buildNavItem(
+                index: 1,
+                icon: Icons.menu_book_outlined,
+                activeIcon: Icons.menu_book,
                 label: 'القرآن',
+              ),
+              _buildNavItem(
+                index: 2,
+                icon: Icons.library_books_outlined,
+                activeIcon: Icons.library_books,
+                label: 'الحديث',
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNavItem({
+    required int index,
+    required IconData icon,
+    required IconData activeIcon,
+    required String label,
+  }) {
+    final isSelected = _selectedIndex == index;
+    return GestureDetector(
+      onTap: () => _onItemTapped(index),
+      behavior: HitTestBehavior.opaque,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 250),
+        curve: Curves.easeOut,
+        padding: EdgeInsets.symmetric(
+          horizontal: isSelected ? 24 : 16,
+          vertical: 10,
+        ),
+        decoration: BoxDecoration(
+          color: isSelected ? AppColors.primary.withOpacity(0.1) : Colors.transparent,
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              isSelected ? activeIcon : icon,
+              color: isSelected ? AppColors.primary : AppColors.textSecondary,
+              size: 26,
+            ),
+            if (isSelected) ...[
+              const SizedBox(width: 8),
+              Text(
+                label,
+                style: const TextStyle(
+                  fontFamily: 'Amiri',
+                  fontSize: 15,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.primary,
+                ),
+              ),
+            ],
+          ],
         ),
       ),
     );

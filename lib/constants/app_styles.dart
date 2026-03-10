@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 import 'app_colors.dart';
 
 class AppStyles {
-  // Text Styles with Amiri font (for general UI)
+  // === Text Styles ===
+
   static const TextStyle headlineLarge = TextStyle(
     fontFamily: 'Amiri',
-    fontSize: 28,
+    fontSize: 30,
     fontWeight: FontWeight.bold,
     color: AppColors.textPrimary,
+    letterSpacing: -0.3,
   );
 
   static const TextStyle headlineMedium = TextStyle(
@@ -24,36 +26,33 @@ class AppStyles {
     color: AppColors.textPrimary,
   );
 
-  // Athkar text styles - using Amiri for better readability
   static const TextStyle bodyLarge = TextStyle(
     fontFamily: 'Amiri',
-    fontSize: 24,
-    height: 2.2,
+    fontSize: 22,
+    height: 2.0,
     color: AppColors.textPrimary,
   );
 
   static const TextStyle bodyMedium = TextStyle(
     fontFamily: 'Amiri',
-    fontSize: 20,
-    height: 2.0,
+    fontSize: 18,
+    height: 1.9,
     color: AppColors.textPrimary,
   );
 
-  // For Quranic verses - use Uthmanic font
   static const TextStyle quranText = TextStyle(
     fontFamily: 'Uthmanic',
     fontSize: 28,
-    height: 2.5,
+    height: 2.4,
     color: AppColors.textPrimary,
   );
 
   static const TextStyle caption = TextStyle(
     fontFamily: 'Amiri',
-    fontSize: 14,
+    fontSize: 13,
     color: AppColors.textSecondary,
   );
 
-  // Alternative font style using Lateef
   static const TextStyle lateefStyle = TextStyle(
     fontFamily: 'Lateef',
     fontSize: 22,
@@ -61,20 +60,35 @@ class AppStyles {
     color: AppColors.textPrimary,
   );
 
-  // Card Decoration
+  // === Decorations ===
+
   static BoxDecoration cardDecoration = BoxDecoration(
     color: AppColors.cardBackground,
-    borderRadius: BorderRadius.circular(16),
+    borderRadius: BorderRadius.circular(20),
     boxShadow: [
       BoxShadow(
-        color: Colors.black.withOpacity(0.05),
-        blurRadius: 10,
-        offset: const Offset(0, 4),
+        color: AppColors.shadowLight,
+        blurRadius: 16,
+        offset: const Offset(0, 6),
       ),
     ],
   );
 
-  // Padding
+  static BoxDecoration accentCardDecoration = BoxDecoration(
+    color: AppColors.cardBackground,
+    borderRadius: BorderRadius.circular(20),
+    border: Border.all(color: AppColors.accent.withOpacity(0.18), width: 1),
+    boxShadow: [
+      BoxShadow(
+        color: AppColors.shadowLight,
+        blurRadius: 16,
+        offset: const Offset(0, 6),
+      ),
+    ],
+  );
+
+  // === Spacing ===
+
   static const EdgeInsets paddingAll = EdgeInsets.all(16);
   static const EdgeInsets paddingHorizontal = EdgeInsets.symmetric(horizontal: 16);
   static const EdgeInsets paddingVertical = EdgeInsets.symmetric(vertical: 16);

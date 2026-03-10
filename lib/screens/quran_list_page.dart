@@ -54,7 +54,6 @@ class _QuranListPageState extends State<QuranListPage> with TickerProviderStateM
         _headerController.forward();
       }
     } catch (e) {
-      print('Error loading Quran: $e');
       if (mounted) {
         setState(() => _isLoading = false);
       }
@@ -74,89 +73,113 @@ class _QuranListPageState extends State<QuranListPage> with TickerProviderStateM
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              AppColors.primary,
-              AppColors.background,
-            ],
-          ),
-        ),
-        child: SafeArea(
-          child: Column(
-            children: [
-              _buildHeader(),
-              _buildSearchBar(),
-              Expanded(
-                child: _isLoading
-                    ? Center(
-                        child: CircularProgressIndicator(
-                          color: AppColors.accent,
-                        ),
-                      )
-                    : _buildSurahsList(),
+      backgroundColor: AppColors.background,
+      body: CustomScrollView(
+        physics: const BouncingScrollPhysics(),
+        slivers: [
+          _buildSliverHeader(),
+          SliverToBoxAdapter(child: _buildSearchBar()),
+          if (_isLoading)
+            SliverFillRemaining(
+              child: Center(
+                child: SizedBox(
+                  width: 40,
+                  height: 40,
+                  child: CircularProgressIndicator(
+                    color: AppColors.primary,
+                    strokeWidth: 3,
+                  ),
+                ),
               ),
-            ],
-          ),
-        ),
+            )
+          else if (_filteredSurahs.isEmpty)
+            SliverFillRemaining(
+              child: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.search_off_rounded, size: 52, color: AppColors.textLight),
+                    const SizedBox(height: 14),
+                    Text(
+                      'لم يتم العثور على نتائج',
+                      style: TextStyle(
+                        fontFamily: 'Amiri',
+                        fontSize: 17,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            )
+          else
+            _buildSurahsList(),
+          const SliverToBoxAdapter(child: SizedBox(height: 100)),
+        ],
       ),
     );
   }
 
-  Widget _buildHeader() {
-    return FadeTransition(
-      opacity: _headerAnimation,
-      child: SlideTransition(
-        position: Tween<Offset>(
-          begin: const Offset(0, -0.5),
-          end: Offset.zero,
-        ).animate(_headerAnimation),
+  Widget _buildSliverHeader() {
+    return SliverToBoxAdapter(
+      child: FadeTransition(
+        opacity: _headerAnimation,
         child: Container(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  gradient: AppColors.goldGradient,
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.accent.withOpacity(0.5),
-                      blurRadius: 20,
-                      offset: const Offset(0, 8),
+          decoration: const BoxDecoration(
+            gradient: AppColors.headerGradient,
+            borderRadius: BorderRadius.only(
+              bottomLeft: Radius.circular(32),
+              bottomRight: Radius.circular(32),
+            ),
+          ),
+          child: SafeArea(
+            bottom: false,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 24, 20, 28),
+              child: Column(
+                children: [
+                  // Gold icon badge
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      gradient: AppColors.goldGradient,
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.accent.withOpacity(0.35),
+                          blurRadius: 16,
+                          offset: const Offset(0, 6),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-                child: const Icon(
-                  Icons.menu_book,
-                  size: 48,
-                  color: Colors.white,
-                ),
+                    child: const Icon(
+                      Icons.menu_book_rounded,
+                      size: 40,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'القرآن الكريم',
+                    style: TextStyle(
+                      fontFamily: 'Uthmanic',
+                      fontSize: 30,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    '${_surahs.length} سورة',
+                    style: TextStyle(
+                      fontFamily: 'Amiri',
+                      fontSize: 14,
+                      color: Colors.white.withOpacity(0.75),
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 16),
-              const Text(
-                'القرآن الكريم',
-                style: TextStyle(
-                  fontFamily: 'Uthmanic',
-                  fontSize: 32,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                '${_surahs.length} سورة',
-                style: TextStyle(
-                  fontFamily: 'Amiri',
-                  fontSize: 16,
-                  color: Colors.white.withOpacity(0.9),
-                ),
-              ),
-            ],
+            ),
           ),
         ),
       ),
@@ -165,15 +188,15 @@ class _QuranListPageState extends State<QuranListPage> with TickerProviderStateM
 
   Widget _buildSearchBar() {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
       child: Container(
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(30),
+          borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
               color: AppColors.shadowLight,
-              blurRadius: 10,
+              blurRadius: 12,
               offset: const Offset(0, 4),
             ),
           ],
@@ -182,16 +205,18 @@ class _QuranListPageState extends State<QuranListPage> with TickerProviderStateM
           controller: _searchController,
           onChanged: _filterSurahs,
           textAlign: TextAlign.right,
+          textDirection: TextDirection.rtl,
           decoration: InputDecoration(
             hintText: 'ابحث عن سورة...',
             hintStyle: TextStyle(
               fontFamily: 'Amiri',
               color: AppColors.textLight,
+              fontSize: 15,
             ),
-            prefixIcon: const Icon(Icons.search, color: AppColors.primary),
+            prefixIcon: const Icon(Icons.search_rounded, color: AppColors.primary, size: 22),
             suffixIcon: _searchController.text.isNotEmpty
                 ? IconButton(
-                    icon: const Icon(Icons.clear, color: AppColors.textSecondary),
+                    icon: const Icon(Icons.clear_rounded, color: AppColors.textSecondary, size: 20),
                     onPressed: () {
                       _searchController.clear();
                       _filterSurahs('');
@@ -199,74 +224,54 @@ class _QuranListPageState extends State<QuranListPage> with TickerProviderStateM
                   )
                 : null,
             border: InputBorder.none,
-            contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
           ),
-          style: const TextStyle(
-            fontFamily: 'Amiri',
-            fontSize: 16,
-          ),
+          style: const TextStyle(fontFamily: 'Amiri', fontSize: 15),
         ),
       ),
     );
   }
 
   Widget _buildSurahsList() {
-    if (_filteredSurahs.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.search_off,
-              size: 64,
-              color: AppColors.textLight,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'لم يتم العثور على نتائج',
-              style: TextStyle(
-                fontFamily: 'Amiri',
-                fontSize: 18,
-                color: AppColors.textSecondary,
-              ),
-            ),
-          ],
-        ),
-      );
-    }
-
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: _filteredSurahs.length,
-      itemBuilder: (context, index) {
-        return _AnimatedSurahCard(
-          surah: _filteredSurahs[index],
-          index: index,
-          onTap: () {
-            Navigator.push(
-              context,
-              PageRouteBuilder(
-                pageBuilder: (context, animation, secondaryAnimation) =>
-                    SurahDetailPage(surah: _filteredSurahs[index]),
-                transitionsBuilder: (context, animation, secondaryAnimation, child) {
-                  return FadeTransition(
-                    opacity: animation,
-                    child: ScaleTransition(
-                      scale: Tween<double>(begin: 0.8, end: 1.0).animate(
-                        CurvedAnimation(parent: animation, curve: Curves.easeOut),
-                      ),
-                      child: child,
-                    ),
-                  );
-                },
-              ),
+    return SliverPadding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+      sliver: SliverList(
+        delegate: SliverChildBuilderDelegate(
+          (context, index) {
+            return _AnimatedSurahCard(
+              surah: _filteredSurahs[index],
+              index: index,
+              onTap: () {
+                Navigator.push(
+                  context,
+                  PageRouteBuilder(
+                    pageBuilder: (context, animation, secondaryAnimation) =>
+                        SurahDetailPage(surah: _filteredSurahs[index]),
+                    transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                      return FadeTransition(
+                        opacity: animation,
+                        child: SlideTransition(
+                          position: Tween<Offset>(
+                            begin: const Offset(0.12, 0),
+                            end: Offset.zero,
+                          ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOut)),
+                          child: child,
+                        ),
+                      );
+                    },
+                  ),
+                );
+              },
             );
           },
-        );
-      },
+          childCount: _filteredSurahs.length,
+        ),
+      ),
     );
   }
 }
+
+// === Animated Surah Card ===
 
 class _AnimatedSurahCard extends StatefulWidget {
   final Surah surah;
@@ -283,55 +288,42 @@ class _AnimatedSurahCard extends StatefulWidget {
   State<_AnimatedSurahCard> createState() => _AnimatedSurahCardState();
 }
 
-class _AnimatedSurahCardState extends State<_AnimatedSurahCard> 
+class _AnimatedSurahCardState extends State<_AnimatedSurahCard>
     with SingleTickerProviderStateMixin {
-  late AnimationController _animationController;
-  late Animation<double> _opacityAnimation;
-  late Animation<Offset> _slideAnimation;
+  late AnimationController _ctrl;
+  late Animation<double> _opacity;
+  late Animation<Offset> _slide;
 
   @override
   void initState() {
     super.initState();
-    _animationController = AnimationController(
-      duration: Duration(milliseconds: 400 + (widget.index * 50)),
+    _ctrl = AnimationController(
+      duration: Duration(milliseconds: 350 + (widget.index * 35)),
       vsync: this,
     );
-
-    _opacityAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: Curves.easeOut,
-    ));
-
-    _slideAnimation = Tween<Offset>(
-      begin: const Offset(0.5, 0.0),
+    _opacity = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _ctrl, curve: Curves.easeOut),
+    );
+    _slide = Tween<Offset>(
+      begin: const Offset(0, 0.08),
       end: Offset.zero,
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: Curves.easeOutBack,
-    ));
-
-    _animationController.forward();
+    ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOut));
+    _ctrl.forward();
   }
 
   @override
   void dispose() {
-    _animationController.dispose();
+    _ctrl.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return SlideTransition(
-      position: _slideAnimation,
+      position: _slide,
       child: FadeTransition(
-        opacity: _opacityAnimation,
-        child: _SurahCard(
-          surah: widget.surah,
-          onTap: widget.onTap,
-        ),
+        opacity: _opacity,
+        child: _SurahCard(surah: widget.surah, onTap: widget.onTap),
       ),
     );
   }
@@ -341,29 +333,22 @@ class _SurahCard extends StatelessWidget {
   final Surah surah;
   final VoidCallback onTap;
 
-  const _SurahCard({
-    required this.surah,
-    required this.onTap,
-  });
+  const _SurahCard({required this.surah, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
     final isMeccan = surah.revelation.toLowerCase().contains('mec');
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
+      margin: const EdgeInsets.only(bottom: 10),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: AppColors.accent.withOpacity(0.2),
-          width: 1,
-        ),
+        borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
             color: AppColors.shadowLight,
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+            blurRadius: 12,
+            offset: const Offset(0, 3),
           ),
         ],
       ),
@@ -371,40 +356,34 @@ class _SurahCard extends StatelessWidget {
         color: Colors.transparent,
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(18),
+          splashColor: AppColors.primary.withOpacity(0.06),
           child: Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
             child: Row(
               children: [
-                // Number Badge
+                // Number
                 Container(
-                  width: 50,
-                  height: 50,
+                  width: 46,
+                  height: 46,
                   decoration: BoxDecoration(
-                    gradient: AppColors.primaryGradient,
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColors.primary.withOpacity(0.3),
-                        blurRadius: 8,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
+                    color: AppColors.primary.withOpacity(0.08),
+                    borderRadius: BorderRadius.circular(14),
                   ),
                   child: Center(
                     child: Text(
                       '${surah.suraNo}',
                       style: const TextStyle(
                         fontFamily: 'Amiri',
-                        fontSize: 18,
+                        fontSize: 17,
                         fontWeight: FontWeight.bold,
-                        color: Colors.white,
+                        color: AppColors.primary,
                       ),
                     ),
                   ),
                 ),
-                const SizedBox(width: 16),
-                // Surah Info
+                const SizedBox(width: 14),
+                // Info
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -413,69 +392,34 @@ class _SurahCard extends StatelessWidget {
                         surah.suraNameAr,
                         style: const TextStyle(
                           fontFamily: 'Uthmanic',
-                          fontSize: 22,
+                          fontSize: 20,
                           fontWeight: FontWeight.bold,
                           color: AppColors.textPrimary,
                         ),
-                        textAlign: TextAlign.right,
                         textDirection: TextDirection.rtl,
                       ),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: 2),
                       Text(
                         surah.suraNameEn,
                         style: const TextStyle(
                           fontFamily: 'Amiri',
-                          fontSize: 14,
+                          fontSize: 13,
                           color: AppColors.textSecondary,
                         ),
                       ),
                       const SizedBox(height: 6),
                       Row(
                         children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: isMeccan
-                                  ? AppColors.accent.withOpacity(0.2)
-                                  : AppColors.primary.withOpacity(0.2),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(
-                                  isMeccan ? Icons.location_city : Icons.mosque,
-                                  size: 12,
-                                  color: isMeccan ? AppColors.accentDark : AppColors.primary,
-                                ),
-                                const SizedBox(width: 4),
-                                Text(
-                                  isMeccan ? 'مكية' : 'مدنية',
-                                  style: TextStyle(
-                                    fontFamily: 'Amiri',
-                                    fontSize: 11,
-                                    color: isMeccan ? AppColors.accentDark : AppColors.primary,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ],
-                            ),
+                          _buildTag(
+                            isMeccan ? 'مكية' : 'مدنية',
+                            isMeccan ? AppColors.accent : AppColors.primary,
                           ),
                           const SizedBox(width: 8),
-                          Icon(
-                            Icons.format_list_numbered,
-                            size: 14,
-                            color: AppColors.textSecondary,
-                          ),
-                          const SizedBox(width: 4),
                           Text(
                             '${surah.numberOfAyahs} آية',
-                            style: TextStyle(
+                            style: const TextStyle(
                               fontFamily: 'Amiri',
-                              fontSize: 13,
+                              fontSize: 12,
                               color: AppColors.textSecondary,
                             ),
                           ),
@@ -485,13 +429,32 @@ class _SurahCard extends StatelessWidget {
                   ),
                 ),
                 Icon(
-                  Icons.arrow_forward_ios,
+                  Icons.arrow_forward_ios_rounded,
                   color: AppColors.textLight,
-                  size: 18,
+                  size: 16,
                 ),
               ],
             ),
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTag(String text, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Text(
+        text,
+        style: TextStyle(
+          fontFamily: 'Amiri',
+          fontSize: 11,
+          color: color,
+          fontWeight: FontWeight.w600,
         ),
       ),
     );

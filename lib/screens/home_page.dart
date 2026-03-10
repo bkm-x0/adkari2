@@ -54,7 +54,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
         _headerController.forward();
       }
     } catch (e) {
-      print('Error loading data: $e');
       if (mounted) {
         setState(() => _isLoading = false);
         _showError('فشل تحميل البيانات. تحقق من اتصال الإنترنت.');
@@ -65,8 +64,11 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   void _showError(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(message),
+        content: Text(message, style: const TextStyle(fontFamily: 'Amiri')),
         backgroundColor: AppColors.error,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        margin: const EdgeInsets.all(16),
         duration: const Duration(seconds: 3),
       ),
     );
@@ -82,235 +84,253 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              AppColors.primary,
-              AppColors.background,
-            ],
-          ),
-        ),
-        child: SafeArea(
-          child: Column(
-            children: [
-              _buildHeader(),
-              Expanded(
-                child: _isLoading
-                    ? Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            CircularProgressIndicator(
-                              color: AppColors.accent,
-                            ),
-                            const SizedBox(height: 16),
-                            Text(
-                              'جاري التحميل...',
-                              style: TextStyle(
-                                fontFamily: 'Amiri',
-                                fontSize: 16,
-                                color: AppColors.textSecondary,
-                              ),
-                            ),
-                          ],
-                        ),
-                      )
-                    : _buildContent(),
+      backgroundColor: AppColors.background,
+      body: CustomScrollView(
+        physics: const BouncingScrollPhysics(),
+        slivers: [
+          _buildSliverHeader(),
+          if (_isLoading)
+            SliverFillRemaining(
+              child: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    SizedBox(
+                      width: 40,
+                      height: 40,
+                      child: CircularProgressIndicator(
+                        color: AppColors.primary,
+                        strokeWidth: 3,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'جاري التحميل...',
+                      style: TextStyle(
+                        fontFamily: 'Amiri',
+                        fontSize: 16,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ],
-          ),
-        ),
+            )
+          else if (_categories.isEmpty)
+            SliverFillRemaining(child: _buildEmptyState())
+          else
+            _buildCategoryList(),
+          // Bottom padding to avoid floating nav overlap
+          const SliverToBoxAdapter(child: SizedBox(height: 100)),
+        ],
       ),
     );
   }
 
-  Widget _buildHeader() {
-    return FadeTransition(
-      opacity: _headerAnimation,
-      child: SlideTransition(
-        position: Tween<Offset>(
-          begin: const Offset(0, -0.5),
-          end: Offset.zero,
-        ).animate(_headerAnimation),
+  Widget _buildSliverHeader() {
+    return SliverToBoxAdapter(
+      child: FadeTransition(
+        opacity: _headerAnimation,
         child: Container(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          decoration: const BoxDecoration(
+            gradient: AppColors.headerGradient,
+            borderRadius: BorderRadius.only(
+              bottomLeft: Radius.circular(32),
+              bottomRight: Radius.circular(32),
+            ),
+          ),
+          child: SafeArea(
+            bottom: false,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
+              child: Column(
                 children: [
-                  IconButton(
-                    icon: Icon(
-                      Icons.language,
-                      color: Colors.white,
-                      size: 28,
-                    ),
-                    onPressed: _toggleLanguage,
-                    tooltip: _selectedLanguage == 'العربية' ? 'English' : 'العربية',
+                  // Top action row
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      _buildCircleButton(
+                        icon: Icons.language_rounded,
+                        onTap: _toggleLanguage,
+                        tooltip: _selectedLanguage == 'العربية' ? 'English' : 'العربية',
+                      ),
+                      _buildCircleButton(
+                        icon: Icons.refresh_rounded,
+                        onTap: () {
+                          _apiService.clearCache();
+                          _loadData();
+                        },
+                        tooltip: 'تحديث',
+                      ),
+                    ],
                   ),
+                  const SizedBox(height: 20),
+                  // Icon
                   Container(
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.all(18),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
+                      color: Colors.white.withOpacity(0.12),
                       shape: BoxShape.circle,
+                      border: Border.all(
+                        color: Colors.white.withOpacity(0.2),
+                        width: 1.5,
+                      ),
                     ),
                     child: const Icon(
-                      Icons.menu_book,
-                      size: 48,
+                      Icons.auto_stories_rounded,
+                      size: 40,
                       color: Colors.white,
                     ),
                   ),
-                  IconButton(
-                    icon: Icon(
-                      Icons.refresh,
+                  const SizedBox(height: 16),
+                  const Text(
+                    'حصن المسلم',
+                    style: TextStyle(
+                      fontFamily: 'Amiri',
+                      fontSize: 30,
+                      fontWeight: FontWeight.bold,
                       color: Colors.white,
-                      size: 28,
                     ),
-                    onPressed: () {
-                      _apiService.clearCache();
-                      _loadData();
-                    },
-                    tooltip: 'تحديث',
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    _selectedLanguage == 'العربية' ? 'الأذكار والأدعية' : 'Athkar & Supplications',
+                    style: TextStyle(
+                      fontFamily: 'Amiri',
+                      fontSize: 15,
+                      color: Colors.white.withOpacity(0.8),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: AppColors.accent.withOpacity(0.25),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: AppColors.accent.withOpacity(0.4),
+                        width: 1,
+                      ),
+                    ),
+                    child: Text(
+                      _selectedLanguage,
+                      style: const TextStyle(
+                        fontFamily: 'Amiri',
+                        fontSize: 13,
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ),
                 ],
               ),
-              const SizedBox(height: 16),
-              const Text(
-                'حصن المسلم',
-                style: TextStyle(
-                  fontFamily: 'Amiri',
-                  fontSize: 32,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                _selectedLanguage == 'العربية' ? 'الأذكار والأدعية' : 'Athkar & Supplications',
-                style: TextStyle(
-                  fontFamily: 'Amiri',
-                  fontSize: 16,
-                  color: Colors.white.withOpacity(0.9),
-                ),
-              ),
-              const SizedBox(height: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                decoration: BoxDecoration(
-                  color: AppColors.accent.withOpacity(0.3),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  _selectedLanguage,
-                  style: const TextStyle(
-                    fontFamily: 'Amiri',
-                    fontSize: 14,
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ],
+            ),
           ),
         ),
       ),
     );
   }
 
-  Widget _buildContent() {
-    if (_categories.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.error_outline,
-              size: 64,
+  Widget _buildCircleButton({
+    required IconData icon,
+    required VoidCallback onTap,
+    String? tooltip,
+  }) {
+    return Material(
+      color: Colors.white.withOpacity(0.12),
+      shape: const CircleBorder(),
+      child: InkWell(
+        onTap: onTap,
+        customBorder: const CircleBorder(),
+        child: Padding(
+          padding: const EdgeInsets.all(10),
+          child: Icon(icon, color: Colors.white, size: 22),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.cloud_off_rounded, size: 56, color: AppColors.textLight),
+          const SizedBox(height: 16),
+          Text(
+            'لا توجد أذكار',
+            style: TextStyle(
+              fontFamily: 'Amiri',
+              fontSize: 18,
               color: AppColors.textSecondary,
             ),
-            const SizedBox(height: 16),
-            Text(
-              'لا توجد أذكار',
-              style: TextStyle(
-                fontFamily: 'Amiri',
-                fontSize: 18,
-                color: AppColors.textSecondary,
-              ),
-            ),
-            const SizedBox(height: 16),
-            ElevatedButton.icon(
-              onPressed: _loadData,
-              icon: const Icon(Icons.refresh),
-              label: const Text('إعادة المحاولة'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: Colors.white,
-              ),
-            ),
-          ],
-        ),
-      );
-    }
+          ),
+          const SizedBox(height: 20),
+          ElevatedButton.icon(
+            onPressed: _loadData,
+            icon: const Icon(Icons.refresh_rounded, size: 20),
+            label: const Text('إعادة المحاولة', style: TextStyle(fontFamily: 'Amiri')),
+          ),
+        ],
+      ),
+    );
+  }
 
-    return RefreshIndicator(
-      onRefresh: () async {
-        _apiService.clearCache();
-        await _loadData();
-      },
-      color: AppColors.primary,
-      child: ListView.builder(
-        padding: const EdgeInsets.all(16),
-        itemCount: _categories.length,
-        itemBuilder: (context, index) {
-          return _AnimatedCategoryCard(
-            category: _categories[index],
-            index: index,
-            onTap: () => _navigateToCategoryDetail(_categories[index]),
-          );
-        },
+  Widget _buildCategoryList() {
+    return SliverPadding(
+      padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
+      sliver: SliverList(
+        delegate: SliverChildBuilderDelegate(
+          (context, index) {
+            return _AnimatedCategoryCard(
+              category: _categories[index],
+              index: index,
+              onTap: () => _navigateToCategoryDetail(_categories[index]),
+            );
+          },
+          childCount: _categories.length,
+        ),
       ),
     );
   }
 
   Future<void> _navigateToCategoryDetail(AthkarCategory category) async {
-    // Show loading
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (context) => Center(
-        child: Card(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                CircularProgressIndicator(color: AppColors.primary),
-                const SizedBox(height: 16),
-                Text(
-                  'جاري تحميل الأذكار...',
-                  style: TextStyle(
-                    fontFamily: 'Amiri',
-                    fontSize: 16,
-                  ),
+        child: Container(
+          padding: const EdgeInsets.all(28),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              SizedBox(
+                width: 36,
+                height: 36,
+                child: CircularProgressIndicator(
+                  color: AppColors.primary,
+                  strokeWidth: 3,
                 ),
-              ],
-            ),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'جاري تحميل الأذكار...',
+                style: TextStyle(fontFamily: 'Amiri', fontSize: 15),
+              ),
+            ],
           ),
         ),
       ),
     );
 
     try {
-      // Load category items
       final categoryWithItems = await _apiService.loadCategoryWithItems(category);
-
-      // Close loading
       if (mounted) Navigator.pop(context);
 
-      // Navigate to detail page
       if (mounted) {
         Navigator.push(
           context,
@@ -322,9 +342,9 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                 opacity: animation,
                 child: SlideTransition(
                   position: Tween<Offset>(
-                    begin: const Offset(1, 0),
+                    begin: const Offset(0.15, 0),
                     end: Offset.zero,
-                  ).animate(animation),
+                  ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOut)),
                   child: child,
                 ),
               );
@@ -341,6 +361,8 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   }
 }
 
+// === Animated Category Card ===
+
 class _AnimatedCategoryCard extends StatefulWidget {
   final AthkarCategory category;
   final int index;
@@ -356,51 +378,40 @@ class _AnimatedCategoryCard extends StatefulWidget {
   State<_AnimatedCategoryCard> createState() => _AnimatedCategoryCardState();
 }
 
-class _AnimatedCategoryCardState extends State<_AnimatedCategoryCard> 
+class _AnimatedCategoryCardState extends State<_AnimatedCategoryCard>
     with SingleTickerProviderStateMixin {
-  late AnimationController _animationController;
-  late Animation<double> _scaleAnimation;
-  late Animation<double> _opacityAnimation;
+  late AnimationController _ctrl;
+  late Animation<double> _scale;
+  late Animation<double> _opacity;
 
   @override
   void initState() {
     super.initState();
-    _animationController = AnimationController(
-      duration: Duration(milliseconds: 400 + (widget.index * 50)),
+    _ctrl = AnimationController(
+      duration: Duration(milliseconds: 400 + (widget.index * 40)),
       vsync: this,
     );
-
-    _scaleAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: Curves.easeOutBack,
-    ));
-
-    _opacityAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: Curves.easeOut,
-    ));
-
-    _animationController.forward();
+    _scale = Tween<double>(begin: 0.92, end: 1.0).animate(
+      CurvedAnimation(parent: _ctrl, curve: Curves.easeOutBack),
+    );
+    _opacity = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _ctrl, curve: Curves.easeOut),
+    );
+    _ctrl.forward();
   }
 
   @override
   void dispose() {
-    _animationController.dispose();
+    _ctrl.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return ScaleTransition(
-      scale: _scaleAnimation,
+      scale: _scale,
       child: FadeTransition(
-        opacity: _opacityAnimation,
+        opacity: _opacity,
         child: _CategoryCard(
           category: widget.category,
           index: widget.index,
@@ -424,34 +435,31 @@ class _CategoryCard extends StatelessWidget {
 
   IconData _getCategoryIcon() {
     final title = category.title.toLowerCase();
-    if (title.contains('صباح') || title.contains('مساء') || title.contains('morning') || title.contains('evening')) {
-      return Icons.wb_sunny;
-    } else if (title.contains('نوم') || title.contains('sleep')) {
-      return Icons.bedtime;
-    } else if (title.contains('استيقاظ') || title.contains('waking')) {
-      return Icons.light_mode;
-    } else if (title.contains('صلاة') || title.contains('مسجد') || title.contains('prayer') || title.contains('mosque')) {
-      return Icons.mosque;
-    } else if (title.contains('سفر') || title.contains('travel')) {
-      return Icons.flight;
-    } else if (title.contains('طعام') || title.contains('food')) {
-      return Icons.restaurant;
-    }
-    return Icons.book;
+    if (title.contains('صباح') || title.contains('morning')) return Icons.wb_sunny_rounded;
+    if (title.contains('مساء') || title.contains('evening')) return Icons.nightlight_round;
+    if (title.contains('نوم') || title.contains('sleep')) return Icons.bedtime_rounded;
+    if (title.contains('استيقاظ') || title.contains('waking')) return Icons.light_mode_rounded;
+    if (title.contains('صلاة') || title.contains('مسجد') || title.contains('prayer') || title.contains('mosque')) return Icons.mosque_rounded;
+    if (title.contains('سفر') || title.contains('travel')) return Icons.flight_rounded;
+    if (title.contains('طعام') || title.contains('food')) return Icons.restaurant_rounded;
+    if (title.contains('وضوء') || title.contains('ablution')) return Icons.water_drop_rounded;
+    return Icons.auto_stories_rounded;
   }
 
-  Color _getCategoryColor() {
-    final colors = [
-      AppColors.accent,
-      AppColors.primary,
-      AppColors.accentLight,
-      AppColors.primaryLight,
-    ];
-    return colors[index % colors.length];
-  }
+  static const _iconColors = [
+    Color(0xFF1A6B5A),
+    Color(0xFFC9A84C),
+    Color(0xFF2E8B76),
+    Color(0xFFA68A30),
+    Color(0xFF43A088),
+    Color(0xFF5BB8D4),
+  ];
+
+  Color _getColor() => _iconColors[index % _iconColors.length];
 
   @override
   Widget build(BuildContext context) {
+    final color = _getColor();
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
@@ -460,8 +468,8 @@ class _CategoryCard extends StatelessWidget {
         boxShadow: [
           BoxShadow(
             color: AppColors.shadowLight,
-            blurRadius: 15,
-            offset: const Offset(0, 5),
+            blurRadius: 16,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -470,61 +478,45 @@ class _CategoryCard extends StatelessWidget {
         child: InkWell(
           onTap: onTap,
           borderRadius: BorderRadius.circular(20),
+          splashColor: color.withOpacity(0.08),
+          highlightColor: color.withOpacity(0.04),
           child: Padding(
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
             child: Row(
               children: [
-                Hero(
-                  tag: 'icon_${category.id}',
-                  child: Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          _getCategoryColor(),
-                          _getCategoryColor().withOpacity(0.7),
-                        ],
-                      ),
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(
-                          color: _getCategoryColor().withOpacity(0.3),
-                          blurRadius: 8,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: Icon(
-                      _getCategoryIcon(),
-                      color: Colors.white,
-                      size: 28,
-                    ),
+                // Icon badge
+                Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: color.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Icon(
+                    _getCategoryIcon(),
+                    color: color,
+                    size: 26,
                   ),
                 ),
                 const SizedBox(width: 16),
+                // Title
                 Expanded(
-                  child: Hero(
-                    tag: 'title_${category.id}',
-                    child: Material(
-                      color: Colors.transparent,
-                      child: Text(
-                        category.title,
-                        style: const TextStyle(
-                          fontFamily: 'Amiri',
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.textPrimary,
-                        ),
-                        textAlign: TextAlign.right,
-                        textDirection: TextDirection.rtl,
-                      ),
+                  child: Text(
+                    category.title,
+                    style: const TextStyle(
+                      fontFamily: 'Amiri',
+                      fontSize: 17,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textPrimary,
                     ),
+                    textAlign: TextAlign.right,
+                    textDirection: TextDirection.rtl,
                   ),
                 ),
+                const SizedBox(width: 8),
                 Icon(
-                  Icons.arrow_forward_ios,
+                  Icons.arrow_forward_ios_rounded,
                   color: AppColors.textLight,
-                  size: 18,
+                  size: 16,
                 ),
               ],
             ),

@@ -13,6 +13,7 @@ dependencies:
   cupertino_icons: ^1.0.2
   shared_preferences: ^2.2.2
   provider: ^6.1.5+1
+  dorar_hadith: ^0.4.0
   flutter_localizations:
     sdk: flutter
 
