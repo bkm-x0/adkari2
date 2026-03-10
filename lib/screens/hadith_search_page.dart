@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:dorar_hadith/dorar_hadith.dart';
+import 'package:dorar_hadith/dorar_hadith.dart' as dorar;
 import '../constants/app_colors.dart';
 import '../constants/app_styles.dart';
 import '../services/hadith_service.dart';
@@ -13,23 +13,21 @@ class HadithSearchPage extends StatefulWidget {
 
 class _HadithSearchPageState extends State<HadithSearchPage>
     with TickerProviderStateMixin {
-  final HadithService _hadithService = HadithService();
+  final DorarService _hadithService = DorarService();
   final TextEditingController _searchController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
 
-  List<Hadith> _results = [];
+  List<dorar.Hadith> _results = [];
   bool _isLoading = false;
   bool _hasSearched = false;
   int _currentPage = 1;
   bool _hasNextPage = false;
-  String _lastQuery = '';
 
   late AnimationController _headerController;
   late Animation<double> _headerAnimation;
 
   // Filter state
-  HadithDegree? _selectedDegree;
-  SearchMethod _searchMethod = SearchMethod.anyWord;
+  dorar.HadithDegree? _selectedDegree;
 
   @override
   void initState() {
@@ -59,7 +57,6 @@ class _HadithSearchPageState extends State<HadithSearchPage>
 
     if (!loadMore) {
       _currentPage = 1;
-      _lastQuery = query;
     }
 
     setState(() => _isLoading = true);
@@ -318,23 +315,23 @@ class _HadithSearchPageState extends State<HadithSearchPage>
           const SizedBox(width: 8),
           _buildFilterChip(
             label: 'صحيح',
-            selected: _selectedDegree == HadithDegree.authenticHadith,
+            selected: _selectedDegree == dorar.HadithDegree.authenticHadith,
             onTap: () => setState(
-                () => _selectedDegree = HadithDegree.authenticHadith),
+                () => _selectedDegree = dorar.HadithDegree.authenticHadith),
           ),
           const SizedBox(width: 8),
           _buildFilterChip(
             label: 'صحيح السند',
-            selected: _selectedDegree == HadithDegree.authenticChain,
+            selected: _selectedDegree == dorar.HadithDegree.authenticChain,
             onTap: () =>
-                setState(() => _selectedDegree = HadithDegree.authenticChain),
+                setState(() => _selectedDegree = dorar.HadithDegree.authenticChain),
           ),
           const SizedBox(width: 8),
           _buildFilterChip(
             label: 'ضعيف',
-            selected: _selectedDegree == HadithDegree.weakHadith,
+            selected: _selectedDegree == dorar.HadithDegree.weakHadith,
             onTap: () =>
-                setState(() => _selectedDegree = HadithDegree.weakHadith),
+                setState(() => _selectedDegree = dorar.HadithDegree.weakHadith),
           ),
         ],
       ),
@@ -461,7 +458,7 @@ class _HadithSearchPageState extends State<HadithSearchPage>
     );
   }
 
-  Widget _buildHadithCard(Hadith hadith, int index) {
+  Widget _buildHadithCard(dorar.Hadith hadith, int index) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
       child: GestureDetector(
@@ -593,7 +590,7 @@ class _HadithSearchPageState extends State<HadithSearchPage>
     );
   }
 
-  void _showHadithDetail(Hadith hadith) {
+  void _showHadithDetail(dorar.Hadith hadith) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,

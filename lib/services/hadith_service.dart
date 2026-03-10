@@ -1,9 +1,9 @@
 import 'package:dorar_hadith/dorar_hadith.dart';
 
-class HadithService {
-  static final HadithService _instance = HadithService._internal();
-  factory HadithService() => _instance;
-  HadithService._internal();
+class DorarService {
+  static final DorarService _instance = DorarService._internal();
+  factory DorarService() => _instance;
+  DorarService._internal();
 
   Future<ApiResponse<List<Hadith>>> searchHadith(String query, {int page = 1}) async {
     return await DorarClient.use((client) async {
